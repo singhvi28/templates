@@ -23,24 +23,6 @@ def initpow(x):
         power[i] = (power[i-1] * (x % MOD)) % MOD
     return power 
 
-# Function to calculate sieve of Eratosthenes
-# Time complexity: O(N log log N)
-# def calc_sieve(LIMIT):
-#     sieve = [0] * (LIMIT + 1)
-#     for x in range(2, LIMIT + 1):
-#         if sieve[x] == 0:  # x is prime
-#             for u in range(x, LIMIT + 1, x):
-#                 sieve[u] = x
-#     return sieve
-
-# def generate_primes(LIMIT):
-#     sieve = calc_sieve(LIMIT) 
-#     primes = [x for x in range(2, LIMIT + 1) if sieve[x] == x]
-#     return primes
-
-# Function to generate primes using Sieve of Euler
-# Time complexity: O(n)
-
 def euler_sieve(n):
     is_prime = [True] * (n + 1)
     primes = []
@@ -114,12 +96,33 @@ def binpow_mod(a, b, mod):
         b >>= 1
     return res % mod
 
-# Function to calculate GCD
+# Euclidian Algo (to calculate GCD)
 # Time complexity: O(log min(a, b))
 # def gcd(a, b):
 #     while b:
 #         a, b = b, a % b
 #     return a
+
+# Function to calculate LCM
+# Time complexity: O(log min(a, b))
+from math import gcd
+def lcm(a, b):
+    return (a // gcd(a, b)) * b
+
+def extended_gcd(a: int, b: int):
+    """
+    Extended Euclidean Algorithm.
+    Returns (gcd, x, y) such that:
+        a*x + b*y = gcd
+    TC = O(logmin(a,b))
+    SC = O(logmin(a,b)) (recursive stack)
+    """
+    if b == 0:
+        return a, 1, 0
+    g, x1, y1 = extended_gcd(b, a % b)
+    x = y1
+    y = x1 - (a // b) * y1
+    return g, x, y
 
 # Function to check if number is prime
 # Time complexity: O(n**0.5)
@@ -143,12 +146,6 @@ def print_factors(n):
             print(i)
             if i != n // i:
                 print(n // i)
-
-# Function to calculate LCM
-# Time complexity: O(log min(a, b))
-from math import gcd
-def lcm(a, b):
-    return (a // gcd(a, b)) * b
 
 # Function to calculate modular inverse
 # Time complexity: O(log mod)
@@ -181,6 +178,7 @@ def derangement(n):
     for i in range(2, n + 1): dp[i] = ((i - 1) * (dp[i - 1] + dp[i - 2])) % MOD
     return dp[n]
 
+# MATRIX EXPONENTIATION
 from typing import List
 L = 26
 class Mat:
