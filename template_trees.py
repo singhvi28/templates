@@ -12,6 +12,9 @@ class LCA:
             values (list[int]): Node values (0-indexed, will be shifted to 1-indexed).
             edges (list[tuple[int, int]]): Undirected edges of the tree.
             root (int): Root of the tree (default=1).
+        
+        Authored By:
+            akkisinghvi28
         """
         self.n = n
         self.a = [0] + values  # 1-indexed
@@ -86,3 +89,5 @@ class LCA:
         return max(self.get_max(u, self.lvl[u] - self.lvl[l]),
                    self.get_max(v, self.lvl[v] - self.lvl[l]),
                    self.a[l])
+
+lca = LCA()

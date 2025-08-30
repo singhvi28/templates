@@ -8,6 +8,9 @@ def kmp_search(text, pattern):
 
     Returns:
         List[int]: A list of starting indices where the pattern occurs in the text.
+    
+    Authored By:
+        akkisinghvi28
     """
     if not pattern or not text:
         return []
@@ -50,6 +53,9 @@ class AhoCorasick:
         fail (List[int]): Failure links for each node.
         output (List[Set[int]]): Set of pattern indices ending at each node.
         size (int): Total number of nodes in the trie.
+    
+    Authored By:
+        akkisinghvi28
     """
 
     def __init__(self):

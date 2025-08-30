@@ -9,6 +9,9 @@ class FenwickTree:
         - lower_bound(target)      : Smallest idx with prefix_sum(idx) >= target
         - upper_bound(target)      : Smallest idx with prefix_sum(idx) > target
     Indexing: 1-based for internal operations.
+        
+    Authored By: akkisinghvi28
+    
     """
 
     def __init__(self, n):

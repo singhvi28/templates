@@ -1,6 +1,7 @@
 from math import gcd, floor, log2
 
 class SparseTable:
+    ### Authored By: Akshit Singhvi
     def __init__(self, arr, func):
         self.func = func  # Operation: gcd, min, or max
         self.N = len(arr)

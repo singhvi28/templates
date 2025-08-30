@@ -23,6 +23,24 @@ def initpow(x):
         power[i] = (power[i-1] * (x % MOD)) % MOD
     return power 
 
+# Function to calculate sieve of Eratosthenes
+# Time complexity: O(N log log N)
+# def calc_sieve(LIMIT):
+#     sieve = [0] * (LIMIT + 1)
+#     for x in range(2, LIMIT + 1):
+#         if sieve[x] == 0:  # x is prime
+#             for u in range(x, LIMIT + 1, x):
+#                 sieve[u] = x
+#     return sieve
+
+# def generate_primes(LIMIT):
+#     sieve = calc_sieve(LIMIT) 
+#     primes = [x for x in range(2, LIMIT + 1) if sieve[x] == x]
+#     return primes
+
+# Function to generate primes using Sieve of Euler
+# Time complexity: O(n)
+# Authored By; akkisinghvi28
 def euler_sieve(n):
     is_prime = [True] * (n + 1)
     primes = []
@@ -43,6 +61,7 @@ def euler_sieve(n):
 
 # Function to calculate the prime factorization
 # Time complexity: O(N log log N)
+# Authored By; akkisinghvi28
 def primefactor(N):
     lp = [0] * (N + 1)
     pr = []
@@ -76,67 +95,42 @@ def get_prime_factors(n, lp):
 
 # Binary exponentiation function
 # Time complexity: O(log b)
-def binpow(a, b):
-    res = 1
-    while b > 0:
-        if b & 1:
-            res = res * a
-        a = a * a
-        b >>= 1
-    return res
+# def binpow(a, b):
+#     res = 1
+#     while b > 0:
+#         if b & 1:
+#             res = res * a
+#         a = a * a
+#         b >>= 1
+#     return res
 
 # Binary exponentiation function with modulus
 # Time complexity: O(log b)
-def binpow_mod(a, b, mod):
-    res = 1
-    while b > 0:
-        if b & 1:
-            res = (res * a) % mod
-        a = (a * a) % mod
-        b >>= 1
-    return res % mod
+# def binpow_mod(a, b, mod):
+#     res = 1
+#     while b > 0:
+#         if b & 1:
+#             res = (res * a) % mod
+#         a = (a * a) % mod
+#         b >>= 1
+#     return res % mod
 
-# Euclidian Algo (to calculate GCD)
+# Function to calculate GCD
 # Time complexity: O(log min(a, b))
 # def gcd(a, b):
 #     while b:
 #         a, b = b, a % b
 #     return a
 
-# Function to calculate LCM
-# Time complexity: O(log min(a, b))
-from math import gcd
-def lcm(a, b):
-    return (a // gcd(a, b)) * b
-
-def extended_gcd(a: int, b: int):
-    """
-    Extended Euclidean Algorithm.
-    Returns (gcd, x, y) such that:
-        a*x + b*y = gcd
-    TC = O(logmin(a,b))
-    SC = O(logmin(a,b)) (recursive stack)
-    """
-    if b == 0:
-        return a, 1, 0
-    g, x1, y1 = extended_gcd(b, a % b)
-    x = y1
-    y = x1 - (a // b) * y1
-    return g, x, y
-
 # Function to check if number is prime
 # Time complexity: O(n**0.5)
-def is_prime(n):
-    if n < 2:
-        return False
-    if n == 2:
-        return True
-    if n % 2 == 0:
-        return False
-    for i in range(3, int(n ** 0.5) + 1, 2):
-        if n % i == 0:
-            return False
-    return True
+# def is_prime(n):
+#     if n < 2: return False
+#     if n == 2: return True
+#     if n % 2 == 0: return False
+#     for i in range(3, int(n ** 0.5) + 1, 2):
+#         if n % i == 0: return False
+#     return True
 
 # Function to calculate factors of number
 # Time complexity: O(n**0.5)
@@ -147,10 +141,16 @@ def print_factors(n):
             if i != n // i:
                 print(n // i)
 
+# Function to calculate LCM
+# Time complexity: O(log min(a, b))
+from math import gcd, l
+def lcm(a, b):
+    return (a // gcd(a, b)) * b
+
 # Function to calculate modular inverse
 # Time complexity: O(log mod)
 def inversemod(a, mod):
-    return binpow_mod(a, mod - 2, mod)
+    return pow(a, mod - 2, mod)
 
 # Function for modular division
 # Time complexity: O(log c)
@@ -178,7 +178,6 @@ def derangement(n):
     for i in range(2, n + 1): dp[i] = ((i - 1) * (dp[i - 1] + dp[i - 2])) % MOD
     return dp[n]
 
-# MATRIX EXPONENTIATION
 from typing import List
 L = 26
 class Mat:

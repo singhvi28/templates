@@ -1,3 +1,29 @@
+class DSU:
+    def __init__(self, n):
+        self.parent = list(range(n))
+        self.rank = [1] * n
+        self.size = [1] * n
+
+    def find(self, x):
+        if self.parent[x] != x:
+            self.parent[x] = self.find(self.parent[x])
+        return self.parent[x]
+
+    def unite(self, x, y):
+        x = self.find(x)
+        y = self.find(y)
+        if x != y:
+            if self.rank[x] < self.rank[y]:
+                x, y = y, x 
+            self.parent[y] = x
+            self.size[x] += self.size[y]
+            if self.rank[x] == self.rank[y]:
+                self.rank[x] += 1
+
+    def cs(self, x):
+        return self.size[self.find(x)]
+
+
 from heapq import heappop, heappush
 
 def dijkstra(adj, source):
@@ -190,65 +216,3 @@ def topo_sort_bfs(n, adj):
                 q.append(v)
 
     return topo 
-
-
-class DSU:
-    def __init__(self, n):
-        self.parent = list(range(n))
-        self.rank = [1] * n
-        self.size = [1] * n
-
-    def find(self, x):
-        if self.parent[x] != x:
-            self.parent[x] = self.find(self.parent[x])
-        return self.parent[x]
-
-    def unite(self, x, y):
-        x = self.find(x)
-        y = self.find(y)
-        if x != y:
-            if self.rank[x] < self.rank[y]:
-                x, y = y, x 
-            self.parent[y] = x
-            self.size[x] += self.size[y]
-            if self.rank[x] == self.rank[y]:
-                self.rank[x] += 1
-
-    def cs(self, x):
-        return self.size[self.find(x)]
-
-def kruskal(n, edges):
-    """
-    Kruskal's algorithm to find the Minimum Spanning Tree (MST) of a graph.
-    
-    Args:
-        n (int): The number of vertices in the graph.
-        edges (list of tuples): A list of edges where each edge is represented as 
-                                 a tuple (weight, vertex1, vertex2).
-                                 
-    Returns:
-        tuple: A tuple containing the total weight of the MST and a list of the edges in the MST.
-        
-    Time Complexity:
-        - Sorting edges: O(E log E), where E is the number of edges.
-        - Union/Find operations: O(E * α(n)), where α is the inverse Ackermann function (almost constant).
-        
-    Space Complexity:
-        - O(V + E), where V is the number of vertices and E is the number of edges (for DSU and edges list).
-    """
-    # Initialize DSU to manage the connected components
-    dsu = DSU(n)
-    mst_weight = 0  # Total weight of the MST
-    mst_edges = []  # Edges included in the MST
-
-    # Step 1: Sort the edges by weight (ascending)
-    edges.sort()  # Sorting edges based on weight (first element of each tuple)
-
-    # Step 2: Process each edge in sorted order
-    for weight, u, v in edges:
-        if dsu.find(u) != dsu.find(v):  # If u and v are in different components
-            dsu.unite(u, v)  # Unite the components
-            mst_weight += weight  # Add the edge's weight to the MST weight
-            mst_edges.append((u, v, weight))  # Add the edge to the MST
-
-    return mst_weight, mst_edges
