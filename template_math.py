@@ -23,25 +23,12 @@ def initpow(x):
         power[i] = (power[i-1] * (x % MOD)) % MOD
     return power 
 
-# Function to calculate sieve of Eratosthenes
-# Time complexity: O(N log log N)
-# def calc_sieve(LIMIT):
-#     sieve = [0] * (LIMIT + 1)
-#     for x in range(2, LIMIT + 1):
-#         if sieve[x] == 0:  # x is prime
-#             for u in range(x, LIMIT + 1, x):
-#                 sieve[u] = x
-#     return sieve
-
-# def generate_primes(LIMIT):
-#     sieve = calc_sieve(LIMIT) 
-#     primes = [x for x in range(2, LIMIT + 1) if sieve[x] == x]
-#     return primes
-
-# Function to generate primes using Sieve of Euler
-# Time complexity: O(n)
-# Authored By; akkisinghvi28
 def euler_sieve(n):
+    """
+    Function to generate primes using Sieve of Euler
+    Time & space complexity: O(n)
+    Authored By; akkisinghvi28
+    """
     is_prime = [True] * (n + 1)
     primes = []
 
@@ -143,9 +130,9 @@ def print_factors(n):
 
 # Function to calculate LCM
 # Time complexity: O(log min(a, b))
-from math import gcd, l
-def lcm(a, b):
-    return (a // gcd(a, b)) * b
+# from math import gcd
+# def lcm(a, b):
+#     return (a // gcd(a, b)) * b
 
 # Function to calculate modular inverse
 # Time complexity: O(log mod)
@@ -178,8 +165,13 @@ def derangement(n):
     for i in range(2, n + 1): dp[i] = ((i - 1) * (dp[i - 1] + dp[i - 2])) % MOD
     return dp[n]
 
+
+### MATRIX EXPONENTIATION
 from typing import List
+
 L = 26
+MOD = 10**9 + 7
+
 class Mat:
     def __init__(self, copy_from: "Mat" = None) -> None:
         self.a: List[List[int]] = [[0] * L for _ in range(L)]
@@ -198,6 +190,15 @@ class Mat:
                     ) % MOD
         return result
 
+    def transpose(self) -> "Mat":
+        """Return the transpose of the matrix as a new Mat object."""
+        result = Mat()
+        for i in range(L):
+            for j in range(L):
+                result.a[j][i] = self.a[i][j]
+        return result
+
+
 def I() -> Mat:
     m = Mat()
     for i in range(L):
@@ -205,6 +206,7 @@ def I() -> Mat:
     return m
 
 def quickmul(x: Mat, y: int) -> Mat:
+    """Matrix Exponentiation"""
     ans = I()
     cur = x
     while y:
