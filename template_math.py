@@ -205,12 +205,31 @@ def phi(n: int, primes: List[int]) -> int:
 # FERMAT'S LITTLE THEOREM
 # specific case of Euler's Theorem 
 # where n = p (prime)
-# a ** (p-1) % n = 1
+# a ** (p-1) % p = 1
 
 # EXTENDED EULER'S THEOREM
 # (works even when a and n are not coprime)
 # (a ** b) % n  =  (a ** (phi(n) + b % phi(n))) % n
 # provided b >= phi(n)
+
+from typing import List, Tuple
+def crt(remainders: List[int], moduli: List[int]) -> Tuple[int, int]:
+    """
+    Chinese Remainder Theorem solver for pairwise coprime moduli.
+    Returns (x, M) where x is the solution modulo M = product(moduli).
+    """
+    assert len(remainders) == len(moduli)
+    M = 1
+    for m in moduli:
+        M *= m
+    
+    x = 0
+    for ai, mi in zip(remainders, moduli):
+        Mi = M // mi
+        # Modular inverse using pow (since mi is prime-safe)
+        yi = pow(Mi, -1, mi)
+        x = (x + ai * Mi * yi) % M
+    return x, M
 
 class Combinatorics:
     """
