@@ -248,7 +248,8 @@ class Combinatorics:
         self.fact = [1] * (N + 1)
         for i in range(1, N + 1):
             self.fact[i] = (self.fact[i - 1] * i) % self.MOD
-
+        self.d = self._get_derangements(N)
+    
     def _inversemod(self, a: int) -> int:
         """Return modular inverse of a modulo MOD (MOD must be prime)."""
         return pow(a, self.MOD - 2, self.MOD)
@@ -263,8 +264,7 @@ class Combinatorics:
     # Function to calculate derangements !n
     # !n=(n−1)(!(n−1)+!(n−2)) where !0 = 1 and !1 = 0
     # Time complexity: O(n)
-    @staticmethod
-    def derangement(self, n):
+    def _get_derangements(self, n):
         """Return derangements upto n."""
         if n == 0: return 1
         if n == 1: return 0
@@ -274,3 +274,5 @@ class Combinatorics:
         for i in range(2, n + 1): dp[i] = ((i - 1) * (dp[i - 1] + dp[i - 2])) % MOD
         return dp
 
+    def derangement(self, n): 
+        return self.d[n]
