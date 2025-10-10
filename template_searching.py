@@ -29,11 +29,7 @@ def find_largest_true(lo, hi, check):
 
 # TERNARY SEARCH FOR MINIMUM (INTEGER VERSION)
 
-def check(x: int) -> int:
-    # Define your unimodal integer function here
-    pass
-
-def ternary_search(lo: int, hi: int) -> int:
+def ternary_search(lo: int, hi: int, check) -> int:
     while hi - lo > 3:
         m1 = lo + (hi - lo) // 3
         m2 = hi - (hi - lo) // 3
@@ -45,3 +41,20 @@ def ternary_search(lo: int, hi: int) -> int:
     for x in range(lo, hi + 1):
         if check(x) < check(best):
             best = x
+
+def ternary_search(f, left, right, eps=1e-7):
+    """
+    Find x in [left, right] that minimizes f(x).
+    f must be unimodal (convex in this case).
+    eps = precision
+    """
+    while right - left > eps:
+        m1 = left + (right - left) / 3
+        m2 = right - (right - left) / 3
+        
+        if f(m1) < f(m2):
+            right = m2   # min is in [left, m2]
+        else:
+            left = m1    # min is in [m1, right]
+    
+    return (left + right) / 2  # approximate min point
