@@ -231,6 +231,73 @@ def crt(remainders: List[int], moduli: List[int]) -> Tuple[int, int]:
         x = (x + ai * Mi * yi) % M
     return x, M
 
+def mobius(n):
+    """Calculate Möbius function values up to n"""
+    mu = [0] * (n + 1)
+    mu[1] = 1
+    is_prime = [True] * (n + 1)
+    
+    for i in range(2, n + 1):
+        if is_prime[i]:
+            for j in range(i, n + 1, i):
+                is_prime[j] = False
+                mu[j] = -1 if mu[j] == 0 else -mu[j]
+            
+            # Check for squares
+            if i * i <= n:
+                for j in range(i * i, n + 1, i * i):
+                    mu[j] = 0
+    
+    # Correct calculation
+    mu = [0] * (n + 1)
+    is_prime = [True] * (n + 1)
+    prime_factors = [0] * (n + 1)
+    
+    mu[1] = 1
+    
+    for i in range(2, n + 1):
+        if is_prime[i]:
+            for j in range(i, n + 1, i):
+                is_prime[j] = False if j > i else True
+                prime_factors[j] += 1
+                
+                # Check if divisible by i^2
+                if j % (i * i) == 0:
+                    prime_factors[j] = -1
+    
+    for i in range(1, n + 1):
+        if prime_factors[i] == -1:
+            mu[i] = 0
+        elif prime_factors[i] == 0:
+            mu[i] = 1
+        else:
+            mu[i] = -1 if prime_factors[i] % 2 == 1 else 1
+    
+    return mu
+
+
+def mobius_sieve(n):
+    """Optimized sieve for Möbius function"""
+    mu = [1] * (n + 1)
+    is_prime = [True] * (n + 1)
+    primes = []
+    
+    for i in range(2, n + 1):
+        if is_prime[i]:
+            primes.append(i)
+            mu[i] = -1
+        
+        for p in primes:
+            if i * p > n:
+                break
+            is_prime[i * p] = False
+            if i % p == 0:
+                mu[i * p] = 0
+                break
+            mu[i * p] = -mu[i]
+    
+    return mu
+
 class Combinatorics:
     """
     Efficient nCr (binomial coefficient) modulo MOD with precomputation.
@@ -275,4 +342,37 @@ class Combinatorics:
         return dp
 
     def derangement(self, n): 
+        return self.d[n]
+
+class ExactCombinatorics:
+    def __init__(self, N: int):
+        self.N = N
+        self.fact = [1] * (N + 1)
+        for i in range(1, N + 1):
+            self.fact[i] = self.fact[i - 1] * i
+        self.d = self._get_derangements(N)
+
+    def nCr(self, n: int, r: int) -> int:
+        """Compute exact n choose r."""
+        if r > n or n < 0 or r < 0:
+            return 0
+        return self.fact[n] // (self.fact[r] * self.fact[n - r])
+
+    def _get_derangements(self, n: int):
+        """Precompute derangements exactly (no mod)."""
+        if n == 0:
+            return [1]
+        if n == 1:
+            return [1, 0]
+        dp = [0] * (n + 1)
+        dp[0] = 1
+        dp[1] = 0
+        for i in range(2, n + 1):
+            dp[i] = (i - 1) * (dp[i - 1] + dp[i - 2])
+        return dp
+
+    def derangement(self, n: int) -> int:
+        """Return exact derangement count for n."""
+        if n > self.N:
+            raise ValueError(f"Precomputed only up to {self.N}")
         return self.d[n]
