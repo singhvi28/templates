@@ -31,7 +31,7 @@ class Hashing:
                     hashed = (hashed + self.hashValues[i][j - 1]) % mod
                 self.hashValues[i][j] = hashed
 
-    def substring_hash(self, l: int, r: int) -> List[int]:
+    def substring_hash(self, l: int, r: int) -> int:
         hash_result = [0] * self.primes
         for i in range(self.primes):
             mod = self.hashPrimes[i]
@@ -39,7 +39,9 @@ class Hashing:
             val2 = self.hashValues[i][l - 1] if l > 0 else 0
             sub_hash = (val1 - val2 + mod) % mod
             hash_result[i] = (sub_hash * self.inversePowersOfBase[i][l]) % mod
-        return hash_result
+        base_multiplier = 10**9 + 21
+        return base_multiplier * hash_result[0] + hash_result[1]
+
 
 def kmp_search(text, pattern):
     """
