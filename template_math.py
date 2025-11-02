@@ -11,6 +11,73 @@
 # a - b = ((a | b) ^ b) - (b ^ (a & b))
 # if x is a power of two ---> x&(x-1) == 0
 
+### GAUSS ELIMINATION
+
+def gauss_solve(A, b):
+    """
+    Solve A x = b using Gaussian elimination.
+    
+    Input:
+        A : list of lists (n × m matrix)
+        b : list (n vector)
+
+    Returns:
+        (status, solution)
+            status = 1  -> unique solution
+            status = 2  -> infinite solutions
+            status = -1 -> no solution
+            solution = list of variable values if exist
+    
+    Author: akshitsinghvi28
+    """
+
+    a = [row + [b[i]] for i, row in enumerate(A)]
+
+    eps = 1e-9
+    n = len(a)
+    m = len(a[0]) - 1
+    pos = [-1] * m
+    rank = 0
+
+    for col in range(m):
+        row = rank
+        mx = row
+
+        for i in range(row, n):
+            if abs(a[i][col]) > abs(a[mx][col]):
+                mx = i
+
+        if abs(a[mx][col]) < eps:
+            continue
+
+        a[row], a[mx] = a[mx], a[row]
+        pos[col] = row
+
+        for i in range(n):
+            if i != row and abs(a[i][col]) > eps:
+                c = a[i][col] / a[row][col]
+                for j in range(col, m+1):
+                    a[i][j] -= a[row][j] * c
+
+        rank += 1
+
+    ans = [0] * m
+    for i in range(m):
+        if pos[i] != -1:
+            ans[i] = a[pos[i]][m] / a[pos[i]][i]
+
+    for i in range(n):
+        s = sum(ans[j] * a[i][j] for j in range(m))
+        if abs(s - a[i][m]) > eps:
+            return -1, []
+
+    for i in range(m):
+        if pos[i] == -1:
+            return 2, ans
+
+    return 1, ans
+
+
 ### MATRIX EXPONENTIATION
 from typing import List
 
