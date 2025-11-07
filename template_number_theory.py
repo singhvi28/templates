@@ -232,3 +232,67 @@ def mobius_sieve(n):
     
     return mu
 
+
+from functools import lru_cache
+
+class CoprimeCounter:
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def _factor(k: int):
+        pf = []
+        x = k
+        d = 2
+        while d * d <= x:
+            if x % d == 0:
+                pf.append(d)
+                while x % d == 0:
+                    x //= d
+            d += 1
+        if x > 1:
+            pf.append(x)
+        return tuple(pf)  # hashable
+
+    @staticmethod
+    def _gen_divisors(pf):
+        # pf is distinct prime factors
+        divs = [1]
+        for p in pf:
+            divs += [d * p for d in divs]
+        return divs
+
+    @staticmethod
+    def _mobius(d, pf):
+        # since divisors are from distinct primes, no squares appear,
+        # so mobius(d) = (-1)^(number of pf dividing d)
+        cnt = 0
+        for p in pf:
+            if d % p == 0:
+                cnt += 1
+        return -1 if (cnt & 1) else 1
+
+    @lru_cache(maxsize=None)
+    def _data(self, k: int):
+        # returns (pf, divisors)
+        pf = self._factor(k)
+        divs = self._gen_divisors(pf)
+        return pf, divs
+
+    def count(self, n: int, k: int) -> int:
+        if n <= 0:
+            return 0
+        if k < 0:
+            k = -k
+        if k == 0:
+            return 1 if n >= 1 else 0
+        if k == 1:
+            return n
+
+        pf, divs = self._data(k)
+
+        ans = 0
+        for d in divs:
+            mu = self._mobius(d, pf)
+            ans += mu * (n // d)
+        return ans
