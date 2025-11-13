@@ -99,7 +99,7 @@ def egcd_iterative(a: int, b: int):
         y0 = -y0
     return (A, x0, y0)
 
-# BEZOUT'S LEMMA -> a*x + b*y = g, where g = gcd(a, b)
+
 
 from typing import List
 
@@ -132,6 +132,8 @@ def phi(n: int, primes: List[int]) -> int:
     if temp > 1: result -= result // temp
     return result
 
+# BEZOUT'S LEMMA -> a*x + b*y = g, where g = gcd(a, b)
+
 # EULER'S THEOREM
 # if gcd(a, n) = 1, then
 # (a ** phi(n)) % n = 1
@@ -160,7 +162,6 @@ def crt(remainders: List[int], moduli: List[int]) -> Tuple[int, int]:
     x = 0
     for ai, mi in zip(remainders, moduli):
         Mi = M // mi
-        # Modular inverse using pow (since mi is prime-safe)
         yi = pow(Mi, -1, mi)
         x = (x + ai * Mi * yi) % M
     return x, M
@@ -177,12 +178,10 @@ def mobius(n):
                 is_prime[j] = False
                 mu[j] = -1 if mu[j] == 0 else -mu[j]
             
-            # Check for squares
             if i * i <= n:
                 for j in range(i * i, n + 1, i * i):
                     mu[j] = 0
     
-    # Correct calculation
     mu = [0] * (n + 1)
     is_prime = [True] * (n + 1)
     prime_factors = [0] * (n + 1)
@@ -195,7 +194,6 @@ def mobius(n):
                 is_prime[j] = False if j > i else True
                 prime_factors[j] += 1
                 
-                # Check if divisible by i^2
                 if j % (i * i) == 0:
                     prime_factors[j] = -1
     
@@ -252,11 +250,10 @@ class CoprimeCounter:
             d += 1
         if x > 1:
             pf.append(x)
-        return tuple(pf)  # hashable
+        return tuple(pf)
 
     @staticmethod
     def _gen_divisors(pf):
-        # pf is distinct prime factors
         divs = [1]
         for p in pf:
             divs += [d * p for d in divs]
@@ -264,8 +261,6 @@ class CoprimeCounter:
 
     @staticmethod
     def _mobius(d, pf):
-        # since divisors are from distinct primes, no squares appear,
-        # so mobius(d) = (-1)^(number of pf dividing d)
         cnt = 0
         for p in pf:
             if d % p == 0:
