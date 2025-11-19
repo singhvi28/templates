@@ -20,28 +20,21 @@ def euler_sieve(n):
     return primes
 
 # Function to calculate the prime factorization
-# Time complexity: O(N log log N)
+# Time complexity: 
+#   - O(N log log N) for sieve precomputation
+#   - O(log N) for each get_prime_factors(N, lp) call
 # Authored By; akkisinghvi28
-def primefactor(N):
-    """
-    Linear sieve to compute smallest prime factors (SPF) up to N.
 
-    Returns
-    -------
-    lp : list[int]  Smallest prime factor for each number.
-    pr : list[int]  List of primes up to N.
-    """
-    lp = [0] * (N + 1)
-    pr = []
-    for i in range(2, N + 1):
-        if lp[i] == 0:
-            lp[i] = i
-            pr.append(i)
-        for j in range(len(pr)):
-            if pr[j] > lp[i] or i * pr[j] > N:
-                break
-            lp[i * pr[j]] = pr[j]
-    return lp, pr
+lp = [0] * (N + 1)
+pr = []
+for i in range(2, N + 1):
+    if lp[i] == 0:
+        lp[i] = i
+        pr.append(i)
+    for j in range(len(pr)):
+        if pr[j] > lp[i] or i * pr[j] > N:
+            break
+        lp[i * pr[j]] = pr[j]
 
 
 def get_prime_factors(n, lp):
@@ -68,16 +61,16 @@ def get_prime_factors(n, lp):
 # n = 360
 # factors = get_prime_factors(n, lp) # [(2, 3), (3, 2), (5, 1)]
 
-# Function to calculate factors of number
-# Time complexity: O(n**0.5)
-def getFactors(n):
-    res = []
-    for i in range(1, int(n ** 0.5) + 1):
-        if n % i == 0:
-            res.append(i)
-            if i != n // i: res.append(n // i)
-    res.sort()
-    return res
+# # Function to calculate factors of number
+# # Time complexity: O(n**0.5)
+# def getFactors(n):
+#     res = []
+#     for i in range(1, int(n ** 0.5) + 1):
+#         if n % i == 0:
+#             res.append(i)
+#             if i != n // i: res.append(n // i)
+#     res.sort()
+#     return res
 
 def egcd_iterative(a: int, b: int):
     """
@@ -98,7 +91,6 @@ def egcd_iterative(a: int, b: int):
         x0 = -x0
         y0 = -y0
     return (A, x0, y0)
-
 
 
 from typing import List
@@ -131,6 +123,11 @@ def phi(n: int, primes: List[int]) -> int:
             result -= result // p
     if temp > 1: result -= result // temp
     return result
+
+# PROPERTIES OF phi(n)
+# 1. Multiplicative for coprime numbers
+# 2. if n = p**k where p is prime,
+#        phi(n) = p**k - p**(k-1)
 
 # BEZOUT'S LEMMA -> a*x + b*y = g, where g = gcd(a, b)
 
@@ -165,6 +162,17 @@ def crt(remainders: List[int], moduli: List[int]) -> Tuple[int, int]:
         yi = pow(Mi, -1, mi)
         x = (x + ai * Mi * yi) % M
     return x, M
+
+def crt_general(a: int, n: int, b: int, m: int):
+    # solve x ≡ a (mod n), x ≡ b (mod m)
+    # You can extend this pairwise to multiple congruences iteratively.
+    g, x, y = egcd_iterative(n, m)
+    if (b - a) % g != 0:
+        return (0, -1)  # no solution
+    lcm = n // g * m
+    mul = ((b - a) // g) * x % (m // g)
+    res = (a + n * mul) % lcm
+    return (res, lcm)
 
 def mobius(n):
     """Calculate Möbius function values up to n"""
@@ -291,3 +299,33 @@ class CoprimeCounter:
             mu = self._mobius(d, pf)
             ans += mu * (n // d)
         return ans
+
+# Miller-Rabin Primality Test
+def is_prime(n: int) -> bool:
+    """
+    Miller-Rabin (Deterministic) Primality Test
+    Time Complexity: O((log n)**2)
+    Space Complexity: O(1)
+    """
+    if n < 2: return False
+    small_primes = [2,3,5,7,11,13,17,19,23,29]
+    for p in small_primes:
+        if n % p == 0: return n == p
+    d = n-1
+    s = 0
+    while d % 2 == 0:
+        d //= 2; s += 1
+    bases = [2, 3, 5, 7, 11, 13]
+    def check(a):
+        x = pow(a, d, n)
+        if x == 1 or x == n-1:
+            return True
+        for _ in range(s-1):
+            x = (x * x) % n
+            if x == n-1:
+                return True
+        return False
+    for a in bases:
+        if a % n == 0: continue
+        if not check(a): return False
+    return True
