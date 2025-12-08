@@ -207,3 +207,90 @@ class ExactCombinatorics:
         if n > self.N:
             raise ValueError(f"Precomputed only up to {self.N}")
         return self.d[n]
+
+
+class Basis:
+    """Linear basis for XOR over integers."""
+    
+    def __init__(self, bit_width=31):
+        """Initialize empty basis with given bit width."""
+        self.B = bit_width
+        self.basis = [0] * self.B
+        self.sz = 0
+
+    def clear(self):
+        """Reset the basis to empty."""
+        self.basis = [0] * self.B
+        self.sz = 0
+
+    def insert(self, x):
+        """Insert a number into the XOR basis."""
+        for i in range(self.B - 1, -1, -1):
+            if (x >> i) & 1:
+                if self.basis[i]:
+                    x ^= self.basis[i]
+                else:
+                    self.basis[i] = x
+                    self.sz += 1
+                    break
+
+    def can(self, x):
+        """Check if some subset XOR equals x."""
+        for i in range(self.B - 1, -1, -1):
+            x = min(x, x ^ self.basis[i])
+        return x == 0
+
+    def max_xor(self, x=0):
+        """Return maximum XOR obtainable with optional initial x."""
+        for i in range(self.B - 1, -1, -1):
+            x = max(x, x ^ self.basis[i])
+        return x
+
+    def kth(self, k):
+        """Return the k-th smallest subset XOR (1-indexed)."""
+        if k < 1 or k > (1 << self.sz):
+            return -1
+        
+        x = 0
+        cnt = (1 << self.sz)
+        
+        for i in range(self.B - 1, -1, -1):
+            if self.basis[i]:
+                limit = cnt >> 1
+                if k > limit:
+                    if not ((x >> i) & 1):
+                        x ^= self.basis[i]
+                    k -= limit
+                else:
+                    if (x >> i) & 1:
+                        x ^= self.basis[i]
+                cnt >>= 1
+        return x
+
+    def count_lt(self, x):
+        """Count number of subset XOR values strictly less than x."""
+        if x < 0:
+            return 0
+        
+        ans = 0
+        cnt = (1 << self.sz)
+        mask = 0
+        
+        for i in range(self.B - 1, -1, -1):
+            if self.basis[i]:
+                half_cnt = cnt >> 1
+                if (x >> i) & 1:
+                    ans += half_cnt
+                    if not ((mask >> i) & 1):
+                        mask ^= self.basis[i]
+                else:
+                    if (mask >> i) & 1:
+                        mask ^= self.basis[i]
+                cnt >>= 1
+            else:
+                if ((x >> i) & 1) != ((mask >> i) & 1):
+                    if (x >> i) & 1:
+                        return ans + cnt
+                    else:
+                        return ans
+        return ans
