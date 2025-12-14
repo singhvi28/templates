@@ -3,7 +3,7 @@ class FenwickTree:
     Fenwick Tree (Binary Indexed Tree) for prefix sums.
     Supports:
         - add(index, delta)        : Point update
-        - sum(index)               : Prefix sum query [1..index]
+        - prefix_sum(index)               : Prefix sum query [1..index]
         - range_sum(l, r)          : Sum in [l..r]
         - find_kth(k)              : Smallest idx with prefix_sum(idx) >= k  (binary lifting)
     Indexing: 1-based for internal operations.
@@ -23,14 +23,18 @@ class FenwickTree:
             self.bit[idx] += delta
             idx += idx & -idx
 
-    def sum(self, idx):
-        """Return prefix sum from 1 to idx."""
+    def prefix_sum(self, idx):
+        """Return prefix sum from 1 to `idx`."""
         res = 0
         while idx > 0:
             res += self.bit[idx]
             idx -= idx & -idx
         return res
 
+    def range_sum(self, l, r):
+        """Return range sum from `l` to `r`."""
+        return self.prefix_sum(r) - self.prefix_sum(l)
+    
     def find_kth(self, k):
         """
         Binary lifting: Find smallest index such that prefix_sum(index) >= k.
@@ -46,6 +50,52 @@ class FenwickTree:
             bit_mask >>= 1
         return idx + 1
 
+class DoubleFenwick:
+    """
+    Double Fenwick Tree for range updates and range sum queries.
+
+    Supports:
+        - range_add(l, r, delta) : Add delta to all elements in [l, r]
+        - prefix_sum(idx)        : Sum of elements in [1..idx]
+        - range_sum(l, r)        : Sum of elements in [l..r]
+
+    Uses two FenwickTree instances internally.
+    Indexing: 1-based
+    """
+
+    def __init__(self, n):
+        self.n = n
+        self.B1 = FenwickTree(n)
+        self.B2 = FenwickTree(n)
+
+    def _add(self, ft, idx, delta):
+        """Internal helper to safely add within bounds."""
+        if idx <= self.n:
+            ft.add(idx, delta)
+
+    def range_add(self, l, r, delta):
+        """
+        Add `delta` to all elements in range [l, r].
+        """
+        # Update B1
+        self._add(self.B1, l, delta)
+        self._add(self.B1, r + 1, -delta)
+
+        # Update B2
+        self._add(self.B2, l, delta * (l - 1))
+        self._add(self.B2, r + 1, -delta * r)
+
+    def prefix_sum(self, idx):
+        """
+        Return sum of elements in range [1..idx].
+        """
+        return self.B1.sum(idx) * idx - self.B2.sum(idx)
+
+    def range_sum(self, l, r):
+        """
+        Return sum of elements in range [l..r].
+        """
+        return self.prefix_sum(r) - self.prefix_sum(l - 1)
 
 
 class FenwickTree2D:
