@@ -91,3 +91,54 @@ class LCA:
                    self.a[l])
 
 lca = LCA()
+
+
+### SMALL TO LARGE MERGING
+
+import sys
+
+# 1. Increase recursion depth for deep/skewed trees
+sys.setrecursionlimit(300000)
+
+def solve():
+    # Read input
+    # n = int(sys.stdin.readline())
+    # values = list(map(int, sys.stdin.readline().split()))
+    # adj = [[] for _ in range(n)]
+    
+    # results = [None] * n
+
+    def dfs(u, p):
+        """
+        Returns a dictionary/set representing the subtree of u.
+        Always merges smaller children into the larger one.
+        """
+        # Initialize with current node's data
+        # Example: frequency map {value: count}
+        main_container = {values[u]: 1} 
+        
+        for v in adj[u]:
+            if v == p:
+                continue
+            
+            # Recurse to get the child's container
+            child_container = dfs(v, u)
+            
+            # --- THE SMALL TO LARGE LOGIC ---
+            if len(main_container) < len(child_container):
+                # O(1) pointer swap: make the larger one 'main'
+                main_container, child_container = child_container, main_container
+            
+            # Merge child into main
+            # For sets: main_container.update(child_container)
+            # For frequency maps (dicts):
+            for key, val in child_container.items():
+                main_container[key] = main_container.get(key, 0) + val
+            # --------------------------------
+            
+        # Store answer for node u before returning
+        # results[u] = len(main_container) 
+        
+        return main_container
+
+    # dfs(0, -1)
