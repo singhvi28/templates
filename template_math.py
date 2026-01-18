@@ -79,18 +79,39 @@ def gauss_solve(A, b):
 
 
 ### MATRIX EXPONENTIATION
-from typing import List
+from typing import List, Optional, Union
 
-L = 26
 MOD = 10**9 + 7
+L = 3  # example size; assumed to be defined globally
 
 class Mat:
-    def __init__(self, copy_from: "Mat" = None) -> None:
+    def __init__(
+        self,
+        init: Optional[Union["Mat", List[List[int]]]] = None
+    ) -> None:
+        # initialize zero matrix
         self.a: List[List[int]] = [[0] * L for _ in range(L)]
-        if copy_from:
+
+        if init is None:
+            return
+
+        if isinstance(init, Mat):
+            # copy from another Mat
             for i in range(L):
                 for j in range(L):
-                    self.a[i][j] = copy_from.a[i][j]
+                    self.a[i][j] = init.a[i][j]
+
+        elif isinstance(init, list):
+            # initialize from list of lists
+            if len(init) != L or any(len(row) != L for row in init):
+                raise ValueError(f"Expected a {L}x{L} matrix")
+
+            for i in range(L):
+                for j in range(L):
+                    self.a[i][j] = init[i][j] % MOD
+
+        else:
+            raise TypeError("Mat can be initialized with Mat, list of lists, or None")
 
     def __mul__(self, other: "Mat") -> "Mat":
         result = Mat()
@@ -109,7 +130,6 @@ class Mat:
             for j in range(L):
                 result.a[j][i] = self.a[i][j]
         return result
-
 
 def I() -> Mat:
     m = Mat()
