@@ -33,7 +33,7 @@ class FenwickTree:
 
     def range_sum(self, l, r):
         """Return range sum from `l` to `r`."""
-        return self.prefix_sum(r) - self.prefix_sum(l)
+        return self.prefix_sum(r) - self.prefix_sum(l-1)
     
     def find_kth(self, k):
         """
