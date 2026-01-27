@@ -41,6 +41,9 @@ def ternary_search(lo: int, hi: int, check) -> int:
     for x in range(lo, hi + 1):
         if check(x) < check(best):
             best = x
+    return best
+
+
 
 def ternary_search(f, left, right, eps=1e-7):
     """
