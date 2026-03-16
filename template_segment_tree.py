@@ -1,84 +1,77 @@
-# Credits to HealthyUG for the inspiration.
-# Segment Tree with Point Updates and Range Queries
-# Supports multiple Segment Trees with just a change in the Node and Update
-# Very few changes required every time
-
 class SegTree:
-    def __init__(self, a_len, a, Node, Update):  # change if type updated
-        self.arr = a
-        self.n = a_len
-        self.Node = Node
-        self.Update = Update
-        self.s = 1
-        while self.s < 2 * self.n:
-            self.s <<= 1
-        self.tree = [Node() for _ in range(self.s)]
-        self.build(0, self.n - 1, 1)
+    """Iterative segment tree supporting point updates and range queries [l, r)."""
 
-    def build(self, start, end, index):  # Never change this
-        if start == end:
-            self.tree[index] = self.Node(self.arr[start])
-            return
-        mid = (start + end) // 2
-        self.build(start, mid, 2 * index)
-        self.build(mid + 1, end, 2 * index + 1)
-        self.tree[index] = self.Node()
-        self.tree[index].merge(self.tree[2 * index], self.tree[2 * index + 1])
+    def __init__(self, n, op, e):
+        """
+        Initialise tree for n elements.
 
-    def update(self, start, end, index, query_index, u):  # Never change this
-        if start == end:
-            u.apply(self.tree[index])
-            return
-        mid = (start + end) // 2
-        if query_index <= mid:
-            self.update(start, mid, 2 * index, query_index, u)
-        else:
-            self.update(mid + 1, end, 2 * index + 1, query_index, u)
-        self.tree[index] = self.Node()
-        self.tree[index].merge(self.tree[2 * index], self.tree[2 * index + 1])
+        Parameters
+        ----------
+        n : int
+            Number of elements.
+        op : function
+            Binary associative operation (e.g. sum, min, xor).
+        e : any
+            Identity element of the operation.
+        """
+        self.n = n
+        self.op = op
+        self.e = e
 
-    def query(self, start, end, index, left, right):  # Never change this
-        if start > right or end < left:
-            return self.Node()
-        if start >= left and end <= right:
-            return self.tree[index]
-        mid = (start + end) // 2
-        l = self.query(start, mid, 2 * index, left, right)
-        r = self.query(mid + 1, end, 2 * index + 1, left, right)
-        ans = self.Node()
-        ans.merge(l, r)
-        return ans
+        self.size = 1 << (n - 1).bit_length()
+        self.d = [e] * (2 * self.size)
 
-    def make_update(self, index, val):  # pass in as many parameters as required
-        new_update = self.Update(val)  # may change
-        self.update(0, self.n - 1, 1, index, new_update)
+    def build(self, arr):
+        """Build tree from initial array."""
+        for i in range(len(arr)):
+            self.d[self.size + i] = arr[i]
 
-    def make_query(self, left, right):
-        return self.query(0, self.n - 1, 1, left, right)
+        for i in range(self.size - 1, 0, -1):
+            self.d[i] = self.op(self.d[2*i], self.d[2*i+1])
 
-class Node1:
-    def __init__(self, p1=0):  # Identity + actual node
-        self.val = p1  # may change
+    def set(self, p, x):
+        """Set value at index p to x."""
+        p += self.size
+        self.d[p] = x
 
-    def merge(self, l, r):  # Merge two child nodes
-        self.val = l.val ^ r.val  # may change
+        while p > 1:
+            p >>= 1
+            self.d[p] = self.op(self.d[2*p], self.d[2*p+1])
 
+    def get(self, p):
+        """Return value at index p."""
+        return self.d[p + self.size]
 
-class Update1:
-    def __init__(self, p1):  # Actual update
-        self.val = p1  # may change
+    def prod(self, l, r):
+        """Return operation result over range [l, r)."""
+        sml = self.e
+        smr = self.e
 
-    def apply(self, a):  # apply update to given node
-        a.val = self.val  # may change
+        l += self.size
+        r += self.size
 
+        while l < r:
+            if l & 1:
+                sml = self.op(sml, self.d[l])
+                l += 1
+            if r & 1:
+                r -= 1
+                smr = self.op(self.d[r], smr)
+
+            l >>= 1
+            r >>= 1
+
+        return self.op(sml, smr)
+
+# EXAMPLE USAGE
+# def op(a, b):
+#     return a ^ b
 # arr = [1, 2, 3, 4]
-# seg = SegTree(len(arr), arr, Node1, Update1)
-# # Query XOR from index 1 to 3
-# print(seg.make_query(1, 3).val)  # Output: 2^3^4 = 5
-# # Update index 2 to 10
-# seg.make_update(2, 10)
-# # Query again
-# print(seg.make_query(1, 3).val)  # Output: 2^10^4 = 12
+# seg = SegTree(len(arr), op, 0)
+# seg.build(arr)
+# print(seg.prod(1, 4))  # XOR on [1,4)
+# seg.set(2, 10)
+# print(seg.prod(1, 4))
 
 from bisect import bisect_right
 
