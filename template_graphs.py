@@ -23,6 +23,63 @@ class DSU:
     def cs(self, x):
         return self.size[self.find(x)]
 
+import sys
+from types import GeneratorType
+
+def bootstrap(f, stack=[]):
+    def wrappedfunc(*args, **kwargs):
+        if stack: return f(*args, **kwargs)
+        else:
+            to = f(*args, **kwargs)
+            while True:
+                if type(to) is GeneratorType:
+                    stack.append(to)
+                    to = next(to)
+                else:
+                    stack.pop()
+                    if not stack: break
+                    to = stack[-1].send(to)
+            return to
+    return wrappedfunc
+
+class WeightedDSU:
+    def __init__(self, n):
+        self.parent = list(range(n + 1))
+        # dist[i] = Value(i) - Value(parent[i])
+        self.dist = [0] * (n + 1) 
+
+    @bootstrap
+    def find(self, i):
+        if self.parent[i] == i:
+            yield i
+        
+        root = yield self.find(self.parent[i])
+        if self.parent[i] != root:
+            # Propagate the weight: Value(i) relative to new root
+            self.dist[i] += self.dist[self.parent[i]]
+            self.parent[i] = root
+        yield root
+
+    def relate(self, a, b, d):
+        """
+        Sets the relationship: Value(a) - Value(b) = d
+        Returns False if a contradiction is found.
+        """
+        root_a = self.find(a)
+        root_b = self.find(b)
+        if root_a != root_b:
+            self.parent[root_a] = root_b
+            # New distance for the old root
+            self.dist[root_a] = d + self.dist[b] - self.dist[a]
+            return True
+        else:
+            # Check consistency: (Value(a) - Value(root)) - (Value(b) - Value(root)) == d
+            return (self.dist[a] - self.dist[b]) == d
+
+    def get_dist(self, a, b):
+        """Returns Value(a) - Value(b). Assumes they are connected."""
+        if self.find(a) != self.find(b): return None
+        return self.dist[a] - self.dist[b]
 
 from heapq import heappop, heappush
 
