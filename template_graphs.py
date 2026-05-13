@@ -23,6 +23,33 @@ class DSU:
     def cs(self, x):
         return self.size[self.find(x)]
 
+class WeightedDSURec:
+    def __init__(self, n):
+        self.parent = list(range(n))
+        self.dist = [0] * (n)
+
+    def find(self, i):
+        if self.parent[i] != i:
+            orig_parent = self.parent[i]
+            root = self.find(orig_parent)
+            self.dist[i] += self.dist[orig_parent]
+            self.parent[i] = root
+        return self.parent[i]
+
+    def relate(self, a, b, d):
+        root_a = self.find(a)
+        root_b = self.find(b)
+        if root_a != root_b:
+            self.parent[root_a] = root_b
+            self.dist[root_a] = d + self.dist[b] - self.dist[a]
+            return True
+        else:
+            return (self.dist[a] - self.dist[b]) == d
+
+    def get_dist(self, a, b):
+        if self.find(a) != self.find(b): return None
+        return self.dist[a] - self.dist[b]
+
 import sys
 from types import GeneratorType
 
