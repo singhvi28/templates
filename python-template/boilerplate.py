@@ -36,7 +36,7 @@ from math import gcd, ceil, sqrt, isqrt, log2
 from fractions import Fraction
 from typing import List, Tuple
 from bisect import bisect_left, bisect_right, insort
-from functools import reduce, lru_cache
+from functools import reduce, lru_cache, cmp_to_key
 from random import randrange
 # sys.setrecursionlimit(5*(10**5))
 
