@@ -93,6 +93,49 @@ class LCA:
 lca = LCA()
 
 
+def eulerTour(adj, root=0):
+    n = len(adj)
+
+    tin = [0] * n
+    tout = [0] * n
+    tour = []
+
+    timer = 0
+
+    # (node, parent, next_child_idx)
+    stack = [(root, -1, 0)]
+
+    tin[root] = timer
+    timer += 1
+    tour.append(root)
+
+    while stack:
+        u, p, i = stack[-1]
+
+        if i == len(adj[u]):
+            tout[u] = timer - 1
+            stack.pop()
+
+            if stack:  # return to parent
+                tour.append(stack[-1][0])
+
+            continue
+
+        v = adj[u][i]
+        stack[-1] = (u, p, i + 1)
+
+        if v == p:
+            continue
+
+        tin[v] = timer
+        timer += 1
+        tour.append(v)
+
+        stack.append((v, u, 0))
+
+    return tour, tin, tout
+
+
 ### SMALL TO LARGE MERGING
 
 import sys
