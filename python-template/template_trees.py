@@ -33,13 +33,16 @@ class LCA:
 
     def _dfs(self, u, p):
         """DFS to set up parent and level arrays."""
-        self.lvl[u] = self.lvl[p] + 1
-        self.par[u][0] = p
-        self.mx[u][0] = self.a[u]
-        for v in self.adj[u]:
-            if v == p:
-                continue
-            self._dfs(v, u)
+        stack = [(root, root_p)]
+        while stack:
+            u, p = stack.pop()
+            self.lvl[u] = self.lvl[p] + 1
+            self.par[u][0] = p
+            self.mx[u][0] = self.a[u]
+            
+            for v in self.adj[u]:
+                if v != p:
+                    stack.append((v, u))
 
     def _build(self):
         """Precompute binary lifting and maximum values."""
