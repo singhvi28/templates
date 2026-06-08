@@ -33,7 +33,7 @@ class LCA:
 
     def _dfs(self, u, p):
         """DFS to set up parent and level arrays."""
-        stack = [(root, root_p)]
+        stack = [(u, p)]
         while stack:
             u, p = stack.pop()
             self.lvl[u] = self.lvl[p] + 1
