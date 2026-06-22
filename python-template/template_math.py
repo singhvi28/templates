@@ -166,17 +166,16 @@ class Combinatorics:
         self.fact = [1] * (N + 1)
         for i in range(1, N + 1):
             self.fact[i] = (self.fact[i - 1] * i) % self.MOD
-        self.d = self._get_derangements(N)
+        inv = [pow(self.fact[-1], -1, self.MOD)]
+        for i in range(N, 0, -1):
+            inv.append((inv[-1]*i)%self.MOD)
+        self.inv = inv[::-1]
     
-    def _inversemod(self, a: int) -> int:
-        """Return modular inverse of a modulo MOD (MOD must be prime)."""
-        return pow(a, self.MOD - 2, self.MOD)
-
     def nCr(self, n: int, r: int) -> int:
         """Return nCr % MOD, or 0 if r > n."""
         if r > n: return 0
-        p1 = (self.fact[n] * self._inversemod(self.fact[r])) % self.MOD
-        p2 = self._inversemod(self.fact[n - r])
+        p1 = (self.fact[n] * self.inv[r]) % self.MOD
+        p2 = self.inv[n-r]
         return (p1 * p2) % self.MOD
 
     # Function to calculate derangements !n
@@ -227,6 +226,29 @@ class ExactCombinatorics:
         if n > self.N:
             raise ValueError(f"Precomputed only up to {self.N}")
         return self.d[n]
+
+
+class PolynomialFromRoots:
+    def __init__(self, mod):
+        self.MOD = mod
+
+    def coefficients(self, roots):
+        mod = self.MOD
+        poly = [1]  # constant polynomial
+
+        for r in roots:
+            r %= mod
+            m = len(poly)
+            nxt = [0] * (m + 1)
+
+            # Expand (1 + r*x)
+            for i in range(m):
+                nxt[i] = (nxt[i] + poly[i]) % mod
+                nxt[i + 1] = (nxt[i + 1] + poly[i] * r) % mod
+
+            poly = nxt
+
+        return poly
 
 
 class Basis:
