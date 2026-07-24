@@ -1,47 +1,29 @@
-from typing import List
+class StringHash:
+    def __init__(self, s: str, MOD = 10**9 + 7):
+        n = len(s)
+        self.MOD = MOD
+        self.BASE = 131
+        
+        self.H = [0] * (n + 1)
+        self.P = [1] * (n + 1)
+        
+        for i in range(n):
+            self.P[i + 1] = (self.P[i] * self.BASE) % self.MOD
+            self.H[i + 1] = (self.H[i] * self.BASE + ord(s[i])) % self.MOD
 
-class Hashing:
-    def __init__(self, s: str):
-        self.s = s
-        self.n = len(s)
-        self.hashPrimes = [1000000009, 100000007]
-        self.primes = len(self.hashPrimes)
-        self.base = 31
-        self.hashValues = [[] for _ in range(self.primes)]
-        self.powersOfBase = [[] for _ in range(self.primes)]
-        self.inversePowersOfBase = [[] for _ in range(self.primes)]
+    def get_hash(self, l: int, r: int) -> int:
+        """Returns the hash of s[l...r] (0-indexed, inclusive bounds)."""
+        length = r - l + 1
+        res = (self.H[r + 1] - self.H[l] * self.P[length]) % self.MOD
+        return res
 
-        for i in range(self.primes):
-            mod = self.hashPrimes[i]
-            self.powersOfBase[i] = [1] * (self.n + 1)
-            self.inversePowersOfBase[i] = [1] * (self.n + 1)
-            for j in range(1, self.n + 1):
-                self.powersOfBase[i][j] = (self.powersOfBase[i][j - 1] * self.base) % mod
-            self.inversePowersOfBase[i][self.n] = pow(self.powersOfBase[i][self.n], mod - 2, mod)
-            for j in range(self.n - 1, -1, -1):
-                self.inversePowersOfBase[i][j] = (self.inversePowersOfBase[i][j + 1] * self.base) % mod
-
-        for i in range(self.primes):
-            mod = self.hashPrimes[i]
-            self.hashValues[i] = [0] * self.n
-            for j in range(self.n):
-                char_val = ord(s[j]) - ord('a') + 1
-                hashed = (char_val * self.powersOfBase[i][j]) % mod
-                if j > 0:
-                    hashed = (hashed + self.hashValues[i][j - 1]) % mod
-                self.hashValues[i][j] = hashed
-
-    def substring_hash(self, l: int, r: int) -> int:
-        hash_result = [0] * self.primes
-        for i in range(self.primes):
-            mod = self.hashPrimes[i]
-            val1 = self.hashValues[i][r]
-            val2 = self.hashValues[i][l - 1] if l > 0 else 0
-            sub_hash = (val1 - val2 + mod) % mod
-            hash_result[i] = (sub_hash * self.inversePowersOfBase[i][l]) % mod
-        base_multiplier = 10**9 + 21
-        return base_multiplier * hash_result[0] + hash_result[1]
-
+class DoubleHash:
+    def __init__(self, s: str, MOD1 = 10**9 + 7, MOD2 = 10**9 + 9):
+        self.hash1, self.hash2 = StringHash(s, MOD1), StringHash(s, MOD2)
+        self.base = 10**9 + 21
+    
+    def get_hash(self, l: int, r: int):
+        return self.hash1.get_hash(l, r) + self.base * self.hash2.get_hash(l, r)
 
 def kmp_search(text, pattern):
     """
