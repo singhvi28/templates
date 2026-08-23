@@ -262,6 +262,31 @@ def pyn(b):
     if b: print("Yes")
     else: print("No")
 
+def find_smallest_true(lo, hi, check):
+    r = range(lo, hi + 1)
+    idx = bisect_left(r, True, key=check)
+    return r[idx] if idx < len(r) else -1
+
+
+def find_largest_true(lo, hi, check):
+    r = range(lo, hi + 1)
+    idx = bisect_left(r, True, key=lambda x: not check(x))
+    return r[idx - 1] if idx > 0 else -1
+
+def RLE(a):
+    res = []
+    curr, cnt = a[0], 0
+    for ai in a:
+        if ai==curr:
+            cnt += 1
+        else:
+            res.append((curr, cnt))
+            curr = ai
+            cnt = 1
+    res.append((curr, cnt))
+    return res
+
+
 ##### CODE STARTS HERE
 
 def solve():
@@ -270,7 +295,7 @@ def solve():
 def main():
     test = 1
     # if DEBUG: test = inpInt() # for AtCoder
-    # test = inpInt() # for Codeforces
+    test = inpInt() # for Codeforces
     for _ in range(test):
         # print(solve())
         solve()
