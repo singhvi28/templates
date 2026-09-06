@@ -151,3 +151,129 @@ class MST:
         if self.n == 0:
             return 0
         return self._sum(1, 0, self.n - 1, L, R)
+
+
+import bisect
+
+class MergeSortTreeFractionalCascading:
+    def __init__(self, arr):
+        """
+        Iteratively builds a Merge Sort Tree enhanced with Fractional Cascading.
+        Time Complexity: O(N log N)
+        Space Complexity: O(N log N)
+        """
+        self.n = len(arr)
+        if self.n == 0:
+            return
+            
+        # Pad N to the next power of 2 for clean top-down binary splits
+        self.N = 1
+        while self.N < self.n:
+            self.N *= 2
+            
+        # tree stores the sorted arrays for each node
+        self.tree = [[] for _ in range(2 * self.N)]
+        
+        # to_left[node][k] stores how many of the first 'k' elements 
+        # in tree[node] originated from its left child.
+        self.to_left = [[] for _ in range(self.N)]
+        
+        # 1. Initialize leaves
+        for i in range(self.N):
+            if i < self.n:
+                self.tree[self.N + i] = [arr[i]]
+            else:
+                self.tree[self.N + i] = [float('inf')] # Pad out-of-bounds with infinity
+                
+        # 2. Build internal nodes iteratively (bottom-up)
+        for i in range(self.N - 1, 0, -1):
+            left_child = 2 * i
+            right_child = 2 * i + 1
+            
+            L_arr = self.tree[left_child]
+            R_arr = self.tree[right_child]
+            
+            len_L = len(L_arr)
+            len_R = len(R_arr)
+            
+            merged = []
+            to_left_arr = [0]
+            
+            p1 = 0
+            p2 = 0
+            
+            # Merge left and right sorted arrays while mapping fractional cascading pointers
+            while p1 < len_L and p2 < len_R:
+                if L_arr[p1] <= R_arr[p2]:
+                    merged.append(L_arr[p1])
+                    p1 += 1
+                else:
+                    merged.append(R_arr[p2])
+                    p2 += 1
+                to_left_arr.append(p1)
+                
+            # Exhaust remaining elements
+            while p1 < len_L:
+                merged.append(L_arr[p1])
+                p1 += 1
+                to_left_arr.append(p1)
+                
+            while p2 < len_R:
+                merged.append(R_arr[p2])
+                p2 += 1
+                to_left_arr.append(p1) # p1 remains constant
+                
+            self.tree[i] = merged
+            self.to_left[i] = to_left_arr
+
+    def count_less_equal(self, L, R, x):
+        """
+        Iteratively counts the number of elements <= x in the original array's range [L, R].
+        Time Complexity: O(log N)
+        """
+        if L > R or L < 0 or R >= self.n:
+            return 0
+            
+        # O(log N) - The ONLY binary search happens at the root!
+        # k represents the number of elements <= x in the entire segment.
+        k = bisect.bisect_right(self.tree[1], x)
+        if k == 0:
+            return 0
+            
+        ans = 0
+        # Stack simulates a top-down segment tree traversal iteratively.
+        # Stores: (node_idx, node_range_L, node_range_R, query_range_L, query_range_R, current_k)
+        stack = [(1, 0, self.N - 1, L, R, k)]
+        
+        while stack:
+            node, nl, nr, ql, qr, cur_k = stack.pop()
+            
+            # If the current node's range is completely inside the query range
+            if ql <= nl and nr <= qr:
+                ans += cur_k
+                continue
+                
+            mid = (nl + nr) // 2
+            
+            # Fractional Cascading Magic: O(1) transitions to children bounds!
+            k_left = self.to_left[node][cur_k]
+            k_right = cur_k - k_left
+            
+            # If the left child's range overlaps with our query
+            if ql <= mid and k_left > 0:
+                stack.append((node * 2, nl, mid, ql, min(qr, mid), k_left))
+                
+            # If the right child's range overlaps with our query
+            if qr > mid and k_right > 0:
+                stack.append((node * 2 + 1, mid + 1, nr, max(ql, mid + 1), qr, k_right))
+                
+        return ans
+
+    def count_in_range(self, L, R, x, y):
+        """
+        Counts the number of elements in the original array's range [L, R] that are in the value range [x, y].
+        Time Complexity: O(log N)
+        """
+        if x > y:
+            return 0
+        return self.count_less_equal(L, R, y) - self.count_less_equal(L, R, x - 1)
