@@ -46,61 +46,237 @@ struct SegTree {
     }
 };
 
-struct MergeSortTree {
-    int n;
-    vector<vector<long long>> v, pref;
+template <class S,
+          S (*op)(S, S),
+          S (*e)(),
+          class F,
+          S (*mapping)(F, S),
+          F (*composition)(F, F),
+          F (*id)()>
+struct LazySegTree {
+    int _n, size, log;
+    std::vector<S> d;
+    std::vector<F> lz;
 
-    MergeSortTree(const vector<long long>& a = {}) { build(a); }
-
-    void build(const vector<long long>& a) {
-        n = (int)a.size();
-        v.assign(max(1, 4 * n), {});
-        pref.assign(max(1, 4 * n), {});
-        if (n > 0) build_rec(1, 0, n - 1, a);
-    }
-
-    void build_rec(int idx, int l, int r, const vector<long long>& a) {
-        if (l == r) {
-            v[idx] = {a[l]};
-            pref[idx] = {a[l]};
-            return;
+    LazySegTree() : LazySegTree(0) {}
+    explicit LazySegTree(int n) : LazySegTree(std::vector<S>(n, e())) {}
+    explicit LazySegTree(const std::vector<S>& v) : _n(int(v.size())) {
+        size = 1;
+        log = 0;
+        while (size < _n) {
+            size <<= 1;
+            log++;
         }
-        int m = (l + r) / 2;
-        build_rec(idx * 2, l, m, a);
-        build_rec(idx * 2 + 1, m + 1, r, a);
-        merge(v[idx * 2].begin(), v[idx * 2].end(), v[idx * 2 + 1].begin(), v[idx * 2 + 1].end(),
-              back_inserter(v[idx]));
-        pref[idx].resize(v[idx].size());
-        partial_sum(v[idx].begin(), v[idx].end(), pref[idx].begin());
+        d.assign(2 * size, e());
+        lz.assign(size, id());
+        for (int i = 0; i < _n; i++) d[size + i] = v[i];
+        for (int i = size - 1; i >= 1; i--) update(i);
     }
 
-    pair<int, long long> le_rec(int idx, int l, int r, int L, int R, long long x) const {
-        if (R < l || r < L) return {0, 0};
-        if (L <= l && r <= R) {
-            int pos = upper_bound(v[idx].begin(), v[idx].end(), x) - v[idx].begin();
-            long long sum = pos > 0 ? pref[idx][pos - 1] : 0;
-            return {pos, sum};
+    void update(int k) { d[k] = op(d[2 * k], d[2 * k + 1]); }
+
+    void all_apply(int k, F f) {
+        d[k] = mapping(f, d[k]);
+        if (k < size) lz[k] = composition(f, lz[k]);
+    }
+
+    void push(int k) {
+        if (lz[k] != id()) {
+            all_apply(2 * k, lz[k]);
+            all_apply(2 * k + 1, lz[k]);
+            lz[k] = id();
         }
-        int m = (l + r) / 2;
-        auto a = le_rec(idx * 2, l, m, L, R, x);
-        auto b = le_rec(idx * 2 + 1, m + 1, r, L, R, x);
-        return {a.first + b.first, a.second + b.second};
     }
 
-    pair<int, long long> le(int L, int R, long long x) const {
-        if (n == 0) return {0, 0};
-        return le_rec(1, 0, n - 1, L, R, x);
+    void apply(int p, F f) {
+        assert(0 <= p && p < _n);
+        p += size;
+        for (int i = log; i >= 1; i--) push(p >> i);
+        all_apply(p, f);
+        for (int i = 1; i <= log; i++) update(p >> i);
     }
 
-    long long sum_rec(int idx, int l, int r, int L, int R) const {
-        if (R < l || r < L) return 0;
-        if (L <= l && r <= R) return pref[idx].empty() ? 0 : pref[idx].back();
-        int m = (l + r) / 2;
-        return sum_rec(idx * 2, l, m, L, R) + sum_rec(idx * 2 + 1, m + 1, r, L, R);
+    void apply(int l, int r, F f) {
+        assert(0 <= l && l <= r && r <= _n);
+        if (l == r) return;
+        l += size;
+        r += size;
+        for (int i = log; i >= 1; i--) {
+            if (((l >> i) << i) != l) push(l >> i);
+            if (((r >> i) << i) != r) push((r - 1) >> i);
+        }
+        int l2 = l, r2 = r;
+        while (l < r) {
+            if (l & 1) all_apply(l++, f);
+            if (r & 1) all_apply(--r, f);
+            l >>= 1;
+            r >>= 1;
+        }
+        l = l2;
+        r = r2;
+        for (int i = 1; i <= log; i++) {
+            if (((l >> i) << i) != l) update(l >> i);
+            if (((r >> i) << i) != r) update((r - 1) >> i);
+        }
     }
 
-    long long range_sum(int L, int R) const {
-        if (n == 0) return 0;
-        return sum_rec(1, 0, n - 1, L, R);
+    S prod(int l, int r) {
+        assert(0 <= l && l <= r && r <= _n);
+        if (l == r) return e();
+        l += size;
+        r += size;
+        for (int i = log; i >= 1; i--) {
+            if (((l >> i) << i) != l) push(l >> i);
+            if (((r >> i) << i) != r) push((r - 1) >> i);
+        }
+        S sml = e(), smr = e();
+        while (l < r) {
+            if (l & 1) sml = op(sml, d[l++]);
+            if (r & 1) smr = op(d[--r], smr);
+            l >>= 1;
+            r >>= 1;
+        }
+        return op(sml, smr);
+    }
+
+    S all_prod() const { return d[1]; }
+
+    S get(int p) {
+        assert(0 <= p && p < _n);
+        p += size;
+        for (int i = log; i >= 1; i--) push(p >> i);
+        return d[p];
+    }
+
+    void set(int p, S x) {
+        assert(0 <= p && p < _n);
+        p += size;
+        for (int i = log; i >= 1; i--) push(p >> i);
+        d[p] = x;
+        for (int i = 1; i <= log; i++) update(p >> i);
+    }
+
+    template <class G> int find_first(int l, int r, G pred) {
+        assert(0 <= l && l <= r && r <= _n);
+        if (l == r) return -1;
+        l += size;
+        r += size;
+        for (int i = log; i >= 1; i--) {
+            if (((l >> i) << i) != l) push(l >> i);
+            if (((r >> i) << i) != r) push((r - 1) >> i);
+        }
+        std::vector<int> left_nodes, right_nodes;
+        while (l < r) {
+            if (l & 1) left_nodes.push_back(l++);
+            if (r & 1) right_nodes.push_back(--r);
+            l >>= 1;
+            r >>= 1;
+        }
+        std::vector<int> canonical = left_nodes;
+        for (int i = (int)right_nodes.size() - 1; i >= 0; i--) {
+            canonical.push_back(right_nodes[i]);
+        }
+        for (int node : canonical) {
+            if (pred(d[node])) {
+                while (node < size) {
+                    push(node);
+                    if (pred(d[2 * node])) {
+                        node = 2 * node;
+                    } else {
+                        node = 2 * node + 1;
+                    }
+                }
+                return node - size;
+            }
+        }
+        return -1;
+    }
+
+    template <class G> int find_last(int l, int r, G pred) {
+        assert(0 <= l && l <= r && r <= _n);
+        if (l == r) return -1;
+        l += size;
+        r += size;
+        for (int i = log; i >= 1; i--) {
+            if (((l >> i) << i) != l) push(l >> i);
+            if (((r >> i) << i) != r) push((r - 1) >> i);
+        }
+        std::vector<int> left_nodes, right_nodes;
+        while (l < r) {
+            if (l & 1) left_nodes.push_back(l++);
+            if (r & 1) right_nodes.push_back(--r);
+            l >>= 1;
+            r >>= 1;
+        }
+        std::vector<int> canonical = right_nodes;
+        for (int i = (int)left_nodes.size() - 1; i >= 0; i--) {
+            canonical.push_back(left_nodes[i]);
+        }
+        for (int node : canonical) {
+            if (pred(d[node])) {
+                while (node < size) {
+                    push(node);
+                    if (pred(d[2 * node + 1])) {
+                        node = 2 * node + 1;
+                    } else {
+                        node = 2 * node;
+                    }
+                }
+                return node - size;
+            }
+        }
+        return -1;
+    }
+
+    template <class G> int max_right(int l, G g) {
+        assert(0 <= l && l <= _n);
+        assert(g(e()));
+        if (l == _n) return _n;
+        l += size;
+        for (int i = log; i >= 1; i--) push(l >> i);
+        S sm = e();
+        do {
+            while (l % 2 == 0) l >>= 1;
+            if (!g(op(sm, d[l]))) {
+                while (l < size) {
+                    push(l);
+                    l = (2 * l);
+                    if (g(op(sm, d[l]))) {
+                        sm = op(sm, d[l]);
+                        l++;
+                    }
+                }
+                return l - size;
+            }
+            sm = op(sm, d[l]);
+            l++;
+        } while ((l & -l) != l);
+        return _n;
+    }
+
+    template <class G> int min_left(int r, G g) {
+        assert(0 <= r && r <= _n);
+        assert(g(e()));
+        if (r == 0) return 0;
+        r += size;
+        for (int i = log; i >= 1; i--) push((r - 1) >> i);
+        S sm = e();
+        do {
+            r--;
+            while (r > 1 && (r % 2)) r >>= 1;
+            if (!g(op(d[r], sm))) {
+                while (r < size) {
+                    push(r);
+                    r = (2 * r + 1);
+                    if (g(op(d[r], sm))) {
+                        sm = op(d[r], sm);
+                        r--;
+                    }
+                }
+                return r + 1 - size;
+            }
+            sm = op(d[r], sm);
+        } while ((r & -r) != r);
+        return 0;
     }
 };

@@ -73,84 +73,251 @@ class SegTree:
 # seg.set(2, 10)
 # print(seg.prod(1, 4))
 
-from bisect import bisect_right
+class LazySegTree:
+    """
+    Iterative Lazy Segment Tree supporting:
+    1. Range updates: apply(l, r, f) or point update: apply(p, f)
+    2. Range queries: prod(l, r) or all_prod()
+    3. Point access: get(p), set(p, val)
+    4. Tree walks: find_first(l, r, pred), find_last(l, r, pred)
+                   max_right(l, g), min_left(r, g)
+    """
 
-class MST:
-    def __init__(self, a):
-        self.n = len(a)
-        self.v = [[] for _ in range(4 * self.n)]
-        self.p = [[] for _ in range(4 * self.n)]
-        if self.n > 0:
-            self._build(1, 0, self.n - 1, a)
+    def __init__(self, arr, op, e, mapping, composition, id_lazy):
+        if isinstance(arr, int):
+            self.n = arr
+            arr = [e] * arr
+        else:
+            self.n = len(arr)
+        self.op = op
+        self.e = e
+        self.mapping = mapping
+        self.composition = composition
+        self.id_lazy = id_lazy
 
-    def _build(self, idx, l, r, a):
-        if l == r:
-            val = a[l]
-            self.v[idx] = [val]
-            self.p[idx] = [val]
+        self.size = 1 << (self.n - 1).bit_length() if self.n > 0 else 1
+        self.log = self.size.bit_length() - 1
+        self.tree = [e] * (2 * self.size)
+        self.lazy = [id_lazy] * self.size
+
+        for i in range(self.n):
+            self.tree[self.size + i] = arr[i]
+        for i in range(self.size - 1, 0, -1):
+            self._update(i)
+
+    def _update(self, node):
+        self.tree[node] = self.op(self.tree[2 * node], self.tree[2 * node + 1])
+
+    def _apply_node(self, node, f):
+        self.tree[node] = self.mapping(f, self.tree[node])
+        if node < self.size:
+            self.lazy[node] = self.composition(f, self.lazy[node])
+
+    def _push(self, node):
+        if self.lazy[node] != self.id_lazy:
+            f = self.lazy[node]
+            self._apply_node(2 * node, f)
+            self._apply_node(2 * node + 1, f)
+            self.lazy[node] = self.id_lazy
+
+    def apply(self, l, r, f=None):
+        """Apply lazy tag f over range [l, r). If f is None, point update: apply(p, f)."""
+        if f is None:
+            p, f = l, r
+            p += self.size
+            for i in range(self.log, 0, -1):
+                self._push(p >> i)
+            self._apply_node(p, f)
+            for i in range(1, self.log + 1):
+                self._update(p >> i)
             return
-        m = (l + r) // 2
-        self._build(idx * 2, l, m, a)
-        self._build(idx * 2 + 1, m + 1, r, a)
-        L = self.v[idx * 2]
-        R = self.v[idx * 2 + 1]
-        merged = []
-        i = j = 0
-        while i < len(L) and j < len(R):
-            if L[i] <= R[j]:
-                merged.append(L[i])
-                i += 1
-            else:
-                merged.append(R[j])
-                j += 1
-        if i < len(L):
-            merged.extend(L[i:])
-        if j < len(R):
-            merged.extend(R[j:])
-        self.v[idx] = merged
 
-        prefix = []
-        s = 0
-        for val in merged:
-            s += val
-            prefix.append(s)
-        self.p[idx] = prefix
+        if l >= r or l >= self.n or r <= 0: return
+        l = max(l, 0)
+        r = min(r, self.n)
+        l += self.size
+        r += self.size
 
-    # internal version
-    def _le(self, idx, l, r, L, R, x):
-        if R < l or r < L:
-            return 0, 0
-        if L <= l and r <= R:
-            A = self.v[idx]
-            P = self.p[idx]
-            pos = bisect_right(A, x)  # first index > x
-            s = P[pos - 1] if pos > 0 else 0
-            return pos, s
-        m = (l + r) // 2
-        a_cnt, a_sum = self._le(idx * 2, l, m, L, R, x)
-        b_cnt, b_sum = self._le(idx * 2 + 1, m + 1, r, L, R, x)
-        return a_cnt + b_cnt, a_sum + b_sum
+        for i in range(self.log, 0, -1):
+            if ((l >> i) << i) != l: self._push(l >> i)
+            if ((r >> i) << i) != r: self._push((r - 1) >> i)
 
-    # public wrapper: query [L, R], values <= x
-    def le(self, L, R, x):
-        if self.n == 0:
-            return 0, 0
-        return self._le(1, 0, self.n - 1, L, R, x)
+        l2, r2 = l, r
+        while l < r:
+            if l & 1:
+                self._apply_node(l, f)
+                l += 1
+            if r & 1:
+                r -= 1
+                self._apply_node(r, f)
+            l >>= 1
+            r >>= 1
 
-    # internal version
-    def _sum(self, idx, l, r, L, R):
-        if R < l or r < L:
-            return 0
-        if L <= l and r <= R:
-            return self.p[idx][-1] if self.p[idx] else 0
-        m = (l + r) // 2
-        return self._sum(idx * 2, l, m, L, R) + self._sum(idx * 2 + 1, m + 1, r, L, R)
+        l, r = l2, r2
+        for i in range(1, self.log + 1):
+            if ((l >> i) << i) != l: self._update(l >> i)
+            if ((r >> i) << i) != r: self._update((r - 1) >> i)
 
-    # public wrapper: range sum on [L, R]
-    def range_sum(self, L, R):
-        if self.n == 0:
-            return 0
-        return self._sum(1, 0, self.n - 1, L, R)
+    def prod(self, l, r):
+        """Query aggregate over range [l, r)."""
+        if l >= r or l >= self.n or r <= 0: return self.e
+        l = max(l, 0)
+        r = min(r, self.n)
+        l += self.size
+        r += self.size
+
+        for i in range(self.log, 0, -1):
+            if ((l >> i) << i) != l: self._push(l >> i)
+            if ((r >> i) << i) != r: self._push((r - 1) >> i)
+
+        sml = self.e
+        smr = self.e
+        while l < r:
+            if l & 1:
+                sml = self.op(sml, self.tree[l])
+                l += 1
+            if r & 1:
+                r -= 1
+                smr = self.op(self.tree[r], smr)
+            l >>= 1
+            r >>= 1
+        return self.op(sml, smr)
+
+    def all_prod(self):
+        """Return the aggregate of the whole array."""
+        return self.tree[1]
+
+    def get(self, p):
+        """Return value at index p."""
+        p += self.size
+        for i in range(self.log, 0, -1):
+            self._push(p >> i)
+        return self.tree[p]
+
+    def set(self, p, val):
+        """Set arr[p] = val."""
+        p += self.size
+        for i in range(self.log, 0, -1):
+            self._push(p >> i)
+        self.tree[p] = val
+        for i in range(1, self.log + 1):
+            self._update(p >> i)
+
+    def find_first(self, l, r, pred):
+        """Find leftmost index in [l, r) satisfying pred(tree[node])."""
+        if l >= r or l >= self.n or r <= 0: return -1
+        l = max(l, 0)
+        r = min(r, self.n)
+        l += self.size
+        r += self.size
+
+        for i in range(self.log, 0, -1):
+            if ((l >> i) << i) != l: self._push(l >> i)
+            if ((r >> i) << i) != r: self._push((r - 1) >> i)
+
+        left_nodes = []
+        right_nodes = []
+        while l < r:
+            if l & 1:
+                left_nodes.append(l)
+                l += 1
+            if r & 1:
+                r -= 1
+                right_nodes.append(r)
+            l >>= 1
+            r >>= 1
+
+        for node in left_nodes + right_nodes[::-1]:
+            if pred(self.tree[node]):
+                while node < self.size:
+                    self._push(node)
+                    if pred(self.tree[2 * node]):
+                        node = 2 * node
+                    else:
+                        node = 2 * node + 1
+                return node - self.size
+        return -1
+
+    def find_last(self, l, r, pred):
+        """Find rightmost index in [l, r) satisfying pred(tree[node])."""
+        if l >= r or l >= self.n or r <= 0: return -1
+        l = max(l, 0)
+        r = min(r, self.n)
+        l += self.size
+        r += self.size
+
+        for i in range(self.log, 0, -1):
+            if ((l >> i) << i) != l: self._push(l >> i)
+            if ((r >> i) << i) != r: self._push((r - 1) >> i)
+
+        left_nodes = []
+        right_nodes = []
+        while l < r:
+            if l & 1:
+                left_nodes.append(l)
+                l += 1
+            if r & 1:
+                r -= 1
+                right_nodes.append(r)
+            l >>= 1
+            r >>= 1
+
+        for node in right_nodes + left_nodes[::-1]:
+            if pred(self.tree[node]):
+                while node < self.size:
+                    self._push(node)
+                    if pred(self.tree[2 * node + 1]):
+                        node = 2 * node + 1
+                    else:
+                        node = 2 * node
+                return node - self.size
+        return -1
+
+    def max_right(self, l, g):
+        """ACL max_right: find largest r in [l, n] s.t. g(op(arr[l], ..., arr[r-1])) is True."""
+        if l >= self.n: return self.n
+        l = max(l, 0)
+        l += self.size
+        for i in range(self.log, 0, -1):
+            self._push(l >> i)
+        sm = self.e
+        while True:
+            while l % 2 == 0: l >>= 1
+            if not g(self.op(sm, self.tree[l])):
+                while l < self.size:
+                    self._push(l)
+                    l = 2 * l
+                    if g(self.op(sm, self.tree[l])):
+                        sm = self.op(sm, self.tree[l])
+                        l += 1
+                return l - self.size
+            sm = self.op(sm, self.tree[l])
+            l += 1
+            if (l & -l) == l: break
+        return self.n
+
+    def min_left(self, r, g):
+        """ACL min_left: find smallest l in [0, r] s.t. g(op(arr[l], ..., arr[r-1])) is True."""
+        if r <= 0: return 0
+        r = min(r, self.n)
+        r += self.size
+        for i in range(self.log, 0, -1):
+            self._push((r - 1) >> i)
+        sm = self.e
+        while True:
+            r -= 1
+            while r > 1 and (r % 2): r >>= 1
+            if not g(self.op(self.tree[r], sm)):
+                while r < self.size:
+                    self._push(r)
+                    r = 2 * r + 1
+                    if g(self.op(self.tree[r], sm)):
+                        sm = self.op(self.tree[r], sm)
+                        r -= 1
+                return r + 1 - self.size
+            sm = self.op(self.tree[r], sm)
+            if (r & -r) == r: break
+        return 0
 
 
 import bisect
