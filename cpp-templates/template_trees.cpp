@@ -114,3 +114,39 @@ map<int, int>* dfs_small_to_large(int u, int p, const vector<vector<int>>& adj, 
     results[u] = (int)main_container->size();
     return main_container;
 }
+
+// Euler Tour technique mapping subtree queries to contiguous range queries
+tuple<vector<int>, vector<int>, vector<int>> eulerTour(const vector<vector<int>>& adj, int root = 0) {
+    int n = (int)adj.size();
+    vector<int> tin(n, 0), tout(n, 0), tour;
+    int timer = 0;
+
+    // stack stores {node, parent, next_child_idx}
+    vector<tuple<int, int, int>> stack;
+    stack.push_back({root, -1, 0});
+
+    tin[root] = timer++;
+    tour.push_back(root);
+
+    while (!stack.empty()) {
+        auto& [u, p, i] = stack.back();
+
+        if (i == (int)adj[u].size()) {
+            tout[u] = timer - 1;
+            stack.pop_back();
+            if (!stack.empty()) {
+                tour.push_back(get<0>(stack.back()));
+            }
+            continue;
+        }
+
+        int v = adj[u][i++];
+        if (v == p) continue;
+
+        tin[v] = timer++;
+        tour.push_back(v);
+        stack.push_back({v, u, 0});
+    }
+
+    return {tour, tin, tout};
+}

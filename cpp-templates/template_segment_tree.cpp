@@ -280,3 +280,94 @@ struct LazySegTree {
         return 0;
     }
 };
+
+template <typename T>
+struct MergeSortTreeFractionalCascading {
+    int n, N;
+    vector<vector<T>> tree;
+    vector<vector<int>> to_left;
+
+    MergeSortTreeFractionalCascading(const vector<T>& arr = {}) {
+        n = (int)arr.size();
+        if (n == 0) return;
+        N = 1;
+        while (N < n) N *= 2;
+        tree.assign(2 * N, vector<T>());
+        to_left.assign(N, vector<int>());
+
+        for (int i = 0; i < N; i++) {
+            if (i < n) tree[N + i] = {arr[i]};
+            else tree[N + i] = {numeric_limits<T>::max()};
+        }
+
+        for (int i = N - 1; i > 0; i--) {
+            int left_child = 2 * i;
+            int right_child = 2 * i + 1;
+            int len_L = (int)tree[left_child].size();
+            int len_R = (int)tree[right_child].size();
+
+            tree[i].reserve(len_L + len_R);
+            to_left[i].reserve(len_L + len_R + 1);
+            to_left[i].push_back(0);
+
+            int p1 = 0, p2 = 0;
+            while (p1 < len_L && p2 < len_R) {
+                if (tree[left_child][p1] <= tree[right_child][p2]) {
+                    tree[i].push_back(tree[left_child][p1]);
+                    p1++;
+                } else {
+                    tree[i].push_back(tree[right_child][p2]);
+                    p2++;
+                }
+                to_left[i].push_back(p1);
+            }
+            while (p1 < len_L) {
+                tree[i].push_back(tree[left_child][p1]);
+                p1++;
+                to_left[i].push_back(p1);
+            }
+            while (p2 < len_R) {
+                tree[i].push_back(tree[right_child][p2]);
+                p2++;
+                to_left[i].push_back(p1);
+            }
+        }
+    }
+
+    int count_less_equal(int L, int R, T x) const {
+        if (L > R || L < 0 || R >= n) return 0;
+        int k = upper_bound(tree[1].begin(), tree[1].end(), x) - tree[1].begin();
+        if (k == 0) return 0;
+
+        int ans = 0;
+        vector<tuple<int, int, int, int, int, int>> stack;
+        stack.push_back({1, 0, N - 1, L, R, k});
+
+        while (!stack.empty()) {
+            auto [node, nl, nr, ql, qr, cur_k] = stack.back();
+            stack.pop_back();
+
+            if (ql <= nl && nr <= qr) {
+                ans += cur_k;
+                continue;
+            }
+
+            int mid = nl + (nr - nl) / 2;
+            int k_left = to_left[node][cur_k];
+            int k_right = cur_k - k_left;
+
+            if (ql <= mid && k_left > 0) {
+                stack.push_back({node * 2, nl, mid, ql, min(qr, mid), k_left});
+            }
+            if (qr > mid && k_right > 0) {
+                stack.push_back({node * 2 + 1, mid + 1, nr, max(ql, mid + 1), qr, k_right});
+            }
+        }
+        return ans;
+    }
+
+    int count_in_range(int L, int R, T x, T y) const {
+        if (x > y) return 0;
+        return count_less_equal(L, R, y) - count_less_equal(L, R, x - 1);
+    }
+};
