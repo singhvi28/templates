@@ -98,30 +98,27 @@ lca = LCA()
 
 def eulerTour(adj, root=0):
     n = len(adj)
-
     tin = [0] * n
     tout = [0] * n
     tour = []
-
     timer = 0
 
-    # (node, parent, next_child_idx)
     stack = [(root, -1, 0)]
-
+    
+    # Record the root on entry
     tin[root] = timer
-    timer += 1
     tour.append(root)
+    timer += 1
 
     while stack:
         u, p, i = stack[-1]
 
+        # If all children are processed, record the node on exit
         if i == len(adj[u]):
-            tout[u] = timer - 1
+            tout[u] = timer
+            tour.append(u)
+            timer += 1
             stack.pop()
-
-            if stack:  # return to parent
-                tour.append(stack[-1][0])
-
             continue
 
         v = adj[u][i]
@@ -130,9 +127,10 @@ def eulerTour(adj, root=0):
         if v == p:
             continue
 
+        # Record the child on entry
         tin[v] = timer
-        timer += 1
         tour.append(v)
+        timer += 1
 
         stack.append((v, u, 0))
 
